@@ -501,15 +501,18 @@ document.getElementById("s-home").addEventListener("scroll",e=>{
   const el=e.target;
   if(el.scrollTop+el.clientHeight > el.scrollHeight-500) loadMore();
 });
+/* 오늘의 추천: 알고리즘과 상관없이 매번 무작위로 고름 */
+function randomPicks(n){
+  const ids=VIDEOS.map(v=>v.id);
+  for(let i=ids.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [ids[i],ids[j]]=[ids[j],ids[i]]; }
+  return ids.slice(0,n);
+}
 function refillAfter(id){
   if(!homeTop) return;
   const ti=homeTop.indexOf(id), si=homeShown.indexOf(id);
   const shownLen=homeShown.length;
-  if(ti>=0){
-    const keep=homeTop.slice(0,ti+1);
-    const rest=rank(feed()).filter(v=>!keep.includes(v.id)).slice(0,homeTop.length-keep.length).map(v=>v.id);
-    homeTop=[...keep,...rest]; homeShown=[];
-    homeShown.push(...nextBatch(shownLen));
+  if(ti>=0){ // 오늘의 추천은 그대로 두고 계속 추천만 새 취향으로
+    homeShown=[]; homeShown.push(...nextBatch(shownLen));
   } else if(si>=0){
     homeShown=homeShown.slice(0,si+1);
     homeShown.push(...nextBatch(shownLen-homeShown.length));
@@ -551,7 +554,7 @@ function relatedRow(){
 }
 function renderHome(){
   const f=feed();
-  if(!homeTop){ homeTop=rank(f).slice(0,8).map(v=>v.id); homeShown=[]; homeShown.push(...nextBatch(16)); }
+  if(!homeTop){ homeTop=randomPicks(8); homeShown=[]; homeShown.push(...nextBatch(16)); }
   const el=document.getElementById("s-home"), st=el.scrollTop;
   const g = gained();
   const sub = g.length ? `이번 시간에 늘어난 관심: ${g.map(x=>"#"+x[0]).join(", ")}` : "원하는 시점의 알고리즘을 골라 되돌려요";
@@ -563,7 +566,7 @@ function renderHome(){
     <div class="topbar"><h1>AlgoGuide</h1><div style="display:flex"><button class="refresh-btn" onclick="refreshFeed()">↻ 새로고침</button><button class="icon-btn" onclick="go('search')">${ICON.search}</button></div></div>
     ${banner()}
     ${isEmpty(f.P)?`<p class="muted pad" style="margin-bottom:12px">아직 내 취향을 모르는 상태라 여러 영상을 골고루 보여줘요. 마음에 드는 영상을 10초 넘게 보면 바로 바뀌어요.</p>`:""}
-    <div class="sec-title"><h3>오늘의 추천 (${S.temp?persona(S.temp).name:(guardOn()?'가드 ON':'가드 OFF')})</h3><div class="arrows"><button onclick="scrollRow('topRow',-1)">‹</button><button onclick="scrollRow('topRow',1)">›</button></div></div>
+    <div class="sec-title"><h3>오늘의 추천 <small class="muted" style="font-weight:400;font-size:12px">알고리즘과 무관한 랜덤</small></h3><div class="arrows"><button onclick="scrollRow('topRow',-1)">‹</button><button onclick="scrollRow('topRow',1)">›</button></div></div>
     <div class="hrow" id="topRow">${homeTop.map(id=>{const v=VIDEOS[id]; return `<button class="card-s" onclick="watch(${v.id})">${thumb(v)}<div class="t2">${v.title}</div></button>`;}).join("")}</div>
     ${relatedRow()}
     <button class="rewind" onclick="openHistory()">${ICON.rewind}<div><b>${S.snaps.length>1||g.length?'이전 알고리즘으로 되돌리기':'알고리즘 되돌리기'}</b><small>${sub}</small></div></button>
